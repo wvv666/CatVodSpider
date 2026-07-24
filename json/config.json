@@ -56,6 +56,15 @@
       "searchable": 0,
       "changeable": 0,
       "timeout": 60
+    },
+    {
+      "key": "webdav",
+      "name": "WebDAV",
+      "type": 3,
+      "api": "csp_WebDAV",
+      "searchable": 0,
+      "changeable": 0,
+      "ext": "./webdav.json"
     }
   ],
   "doh": [
