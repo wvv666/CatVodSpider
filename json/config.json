@@ -67,6 +67,15 @@
       "ext": "./alist.json"
     },
     {
+      "key": "samba",
+      "name": "Samba",
+      "type": 3,
+      "api": "csp_Samba",
+      "searchable": 0,
+      "changeable": 0,
+      "ext": "./samba.json"
+    },
+    {
       "key": "webdav",
       "name": "WebDAV",
       "type": 3,
@@ -74,6 +83,15 @@
       "searchable": 0,
       "changeable": 0,
       "ext": "./webdav.json"
+    },
+    {
+      "key": "bili",
+      "name": "Bilibili",
+      "type": 3,
+      "api": "csp_Bili",
+      "searchable": 1,
+      "changeable": 1,
+      "ext": "./bili.json"
     }
   ],
   "doh": [
