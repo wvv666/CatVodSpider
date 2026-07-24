@@ -1,17 +1,17 @@
 [
   {
     "name": "Tangsan",
-    "server": "http://192.168.0.1",
+    "server": "http://192.168.1.25:5244",
     "search": true,
     "hidden": false,
     "login": {
-      "username": "1234",
-      "password": "1234"
+      "username": "admin",
+      "password": "admin"
     },
     "params": [
       {
-        "path": "/test",
-        "pass": "1234"
+        "path": "/",
+        "pass": ""
       }
     ]
   }
