@@ -26,21 +26,21 @@ https://gh-proxy.com/https://raw.githubusercontent.com/wvv666/CatVodSpider/main/
 ## cycani 需要账号（只影响播放）
 
 该站点的播放接口必须登录，其它（分类 / 列表 / 搜索 / 详情 / 选集）匿名可用。
-把账号填进站点配置的 `ext`，源会自己登录、缓存令牌、过期自动刷新：
+
+**订阅里已内置一个公用学习账号**（`ext` 里带 `username` / `password` / `token`），开箱即可播放；
+想换成自己的号，改 `js/config.json` 里 `cycani` 那条的 `ext` 即可。源的处理逻辑：
+
+- 有 `token` 就优先用令牌；被拒（401）时用 `username`/`password` 走 `/auth/login` 重新登录，
+  并用 `/auth/refresh` 续期，令牌缓存进宿主存储
+- 只给了 `token` 也没关系：过期后会自动降级成账号密码登录
+- 什么都没给时浏览和搜索照常，点播放返回「未配置账号…」的提示而不是报错
 
 ```json
-{
-  "key": "cycani",
-  "name": "次元城动画",
-  "type": 3,
-  "api": "./cycani.js",
-  "searchable": 1,
-  "ext": "{\"username\":\"你的账号\",\"password\":\"你的密码\"}"
-}
+"ext": "{\"username\":\"你的账号\",\"password\":\"你的密码\",\"token\":\"Bearer eyJ...\"}"
 ```
 
-也可以直接给现成令牌：`"ext": "{\"token\":\"eyJ...\"}"`。
-**没填**时浏览和搜索照常，点播放会返回一条「取流需要登录…」的提示而不是报错。
+> ⚠️ 内置账号是为学习交流公开的，**别把这个密码用在任何别的地方**；仓库公开意味着任何人都能用它。
+> 想只留令牌的话，把 `password` 删掉即可（令牌 7 天有效，过期后需要重登）。
 
 ## 目录
 
