@@ -62,6 +62,35 @@
       "ext": "{\"username\": \"pangv\", \"password\": \"www211533\", \"token\": \"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxNTU4NjI0LCJ1c2VybmFtZSI6InBhbmd2IiwidG9rZW5faWQiOiIwMU0yRkM1N1hWTUQwMDFRWlM0ODRWNzJOWCIsInRva2VuX3ZlcnNpb24iOjEsImlzcyI6Imh0dHA6Ly9sb2NhbGhvc3Q6ODA5MCIsImF1ZCI6WyIiXSwiZXhwIjoxNzg5OTc0NzUwLCJuYmYiOjE3ODkzNjk5NTAsImlhdCI6MTc4OTM2OTk1MH0.0il9jY8jJ1ZvrkFuksmfpGKkwepc9yysdeuKGo0ES5I\"}"
     },
     {
+      "key": "mgnacg",
+      "name": "橘子动漫",
+      "type": 3,
+      "api": "./mgnacg.js",
+      "searchable": 1,
+      "quickSearch": 1,
+      "changeable": 0,
+      "timeout": 60,
+      "style": {
+        "type": "rect",
+        "ratio": 1.4
+      }
+    },
+    {
+      "key": "xifanacg",
+      "name": "稀饭动漫",
+      "type": 3,
+      "api": "./xifanacg.js",
+      "searchable": 1,
+      "quickSearch": 1,
+      "changeable": 0,
+      "timeout": 60,
+      "style": {
+        "type": "rect",
+        "ratio": 1.5
+      },
+      "ext": "{}"
+    },
+    {
       "key": "local",
       "name": "Local",
       "type": 3,

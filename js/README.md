@@ -7,6 +7,8 @@ TVBox / FongMi 的 **js 源**本体与订阅配置，和 `app/src/main/java/com/
 |---|---|---|---|
 | `xl02.js` | 雪落影视 xl02.com.de | 自建站（HTML + 签名 + 载荷伪装） | 匿名可播（分片 CDN 校验 UA） |
 | `cycani.js` | 次元城动画 cycani.org | React SPA + REST API（无混淆） | **需登录**（`/api/v2/sections/{id}/play-url` 要 Authorization） |
+| `mgnacg.js` | 橘子动漫 mgnacg.com | MacCMS(苹果CMS) + Streamlab 模板 | 匿名可播（AES-128-CBC 解出直链） |
+| `xifanacg.js` | 稀饭动漫 Next next.xifanacg.com | Next.js + Supabase（全走接口，不抠 HTML） | 匿名可播（Edge Function 签发 HLS） |
 
 ## 订阅地址（填播放器的「配置地址」）
 
@@ -63,8 +65,12 @@ https://gh-proxy.com/https://raw.githubusercontent.com/wvv666/CatVodSpider/main/
 node js/tools/test_source.js                        # xl02：29 项
 node js/tools/test_cycani.js                        # cycani：28 项（匿名部分）
 CYC_USER=账号 CYC_PASS=密码 node js/tools/test_cycani.js   # 额外验证取流
+node js/tools/test_mgnacg.js                        # mgnacg：24 项（含 AES 解密 + 直链可播）
+node js/tools/test_xifanacg.js                      # xifanacg：24 项（含 HLS 可播 + 弹幕）
 python js/tools/复验分片.py                          # xl02 分片下载验证（用 Python 的 TLS 栈）
 ```
+
+测试台用 `js/tools/host.js` 复刻宿主注入的 `req / md5X / aesX`（`aesX` 同时支持 ECB 与 CBC）。
 
 ## 已实现 / 已知限制
 
@@ -81,3 +87,18 @@ python js/tools/复验分片.py                          # xl02 分片下载验�
   `X-App-Name: cyc_web` / `X-App-Version: cycweb` / `X-Time-Zone: Asia/Shanghai`（缺了会 400 `app_name is required`）。
 - 分类覆盖：推荐（`/index/recommend`）、追番周表、排行（`/ranks`）、分区（`/video-zones`，带题材/年份筛选）。
 - 站点目前每条番剧只有一个线路（`CYC_Main`），源按多线路实现，有第二条时会自动出现在线路切换里。
+
+**mgnacg（橘子动漫）**
+- MacCMS 站：列表/搜索走 `/index.php/ajax/data?mid=1&limit=&page=&tid=|wd=`（站点自带的 `/api.php/provide/vod/` 采集接口已关，返回 `closed`）。
+- 分类：动漫(986 部)/剧场版(208 部)/4月新番/7月新番/10月新番；详情页只暴露站点标为可播的线路（读每条线路第一集的 `player_aaaa.from`，过滤 `ps=0` 的已下线线路）。
+- 取流三步：播放页 `player_aaaa` → `playerconfig.js` 里该线路的解析前缀 → 解析页 `config.url` 用 **AES-128-CBC/Pkcs7** 解出 `.mknvideo` 直链
+  （key/iv 由页面两个 `<meta id>` 派生：字母串按数字串升序重排 + 盐 `Mknacg123321` 做 MD5，再取十六进制前后 16 位，`vkey` 是幌子）。
+- ⚠️ 直链会 302 到 `pan.wo.cn` 的 MP4，**播放时不能带 Referer**（带 Referer 返回 400，带 Origin 收到 CORS 403）→ `play()` 只回传 UA。
+- 网页端没有弹幕（依据见 `弹幕接口.md`）。
+
+**xifanacg（稀饭动漫 Next）**
+- 全接口实现（Supabase PostgREST + Edge Function），不解析 HTML：分类 / 排序 / 筛选 / 搜索都是同一个 RPC `search_animes` 的不同参数。
+- 分类的 `type_id` 形如 `list:{"sort_by":"updated_at"}` / `list:{"filter_format":"movie"}`，参数原样透传给 RPC（实测可用：`updated_at` / `view_count` / `bangumi_score` 三种排序，`filter_format` / `filter_is_finished` 筛选）。
+- 取流 = Edge Function `issue-web-playback` 签发的 HLS 主播放列表（`#EXTM3U`，约 30 分钟有效）。
+- 弹幕：把弹弹play 那一路按宿主 `Result.danmaku` 挂上（先 `sync-dandan-mapping` 拿弹弹剧集号），`count=0` 的集不挂；
+  播放器不认弹弹play JSON 就设 `ext` = `{"danmaku":"0"}`。站内弹幕（`get_danmaku_page`）是 POST RPC，没法当弹幕文件 URL，只在 `弹幕接口.md` 里说明。
