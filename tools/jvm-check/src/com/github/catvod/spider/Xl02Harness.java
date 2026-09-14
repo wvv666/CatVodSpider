@@ -51,8 +51,13 @@ public class Xl02Harness {
 
         // 5. 取流（选一部电影，走完整签名/线路/解密/代理链路）
         JsonObject detail = json(spider.detailContent(Collections.singletonList(id1)));
-        String playUrl = firstPlayUrl(detail.getAsJsonArray("list").get(0).getAsJsonObject().get("vod_play_url").getAsString());
-        String body = spider.playerContent("雪落影视", playUrl, Collections.emptyList());
+        JsonObject vod = detail.getAsJsonArray("list").get(0).getAsJsonObject();
+        String playUrl = firstPlayUrl(vod.get("vod_play_url").getAsString());
+        String[] from = vod.get("vod_play_from").getAsString().split("\\$\\$\\$");
+        String[] urlGroups = vod.get("vod_play_url").getAsString().split("\\$\\$\\$");
+        check("详情暴露多条线路（播放器可切换）", from.length >= 2, String.join(" | ", from));
+        check("线路数与剧集组数一致", from.length == urlGroups.length, from.length + " / " + urlGroups.length);
+        String body = spider.playerContent(from[0], playUrl, Collections.emptyList());
         System.out.println("[DEBUG] playUrl=" + playUrl);
         System.out.println("[DEBUG] playerContent => " + body);
         JsonObject player = json(body);
@@ -76,6 +81,19 @@ public class Xl02Harness {
         String segment = null;
         for (String line : playlist.split("\n")) if (line.startsWith("https://")) { segment = line; break; }
         check("分片已绝对化到 vod.xl01.me", segment != null && segment.startsWith("https://vod.xl01.me/"), segment == null ? "null" : segment.substring(0, 60) + "...");
+        check("默认线路(iplay)分片不带 /hls/", segment != null && !segment.startsWith("https://vod.xl01.me/hls/"), segment == null ? "null" : segment.substring(0, 60) + "...");
+
+        // 6.5 切线路：选最后一条（ac5634-us），分片应带 /hls/ 前缀 —— 证明 flag 真被用上
+        String altUrl = json(spider.playerContent(from[from.length - 1], playUrl, Collections.emptyList())).get("url").getAsString();
+        Map<String, String> altParams = new HashMap<>();
+        for (String item : altUrl.substring(altUrl.indexOf('?') + 1).split("&")) {
+            int i = item.indexOf('=');
+            if (i > 0) altParams.put(item.substring(0, i), item.substring(i + 1));
+        }
+        String altPlaylist = read((InputStream) spider.proxy(altParams)[2]);
+        String altSegment = null;
+        for (String line : altPlaylist.split("\n")) if (line.startsWith("https://")) { altSegment = line; break; }
+        check("切到 " + from[from.length - 1] + " 后分片带 /hls/", altSegment != null && altSegment.startsWith("https://vod.xl01.me/hls/"), altSegment == null ? "null" : altSegment.substring(0, 64) + "...");
 
         // 7. 分片级验证：带浏览器 UA 拉真实分片，首字节必须是 TS 同步字节 0x47
         String browserUa = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36";

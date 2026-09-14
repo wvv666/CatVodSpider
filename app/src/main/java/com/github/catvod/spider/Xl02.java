@@ -71,6 +71,13 @@ public class Xl02 extends Spider {
     private static final List<String> PREFER = Arrays.asList("iplay", "tos_hls3", "ac5634-us");
     private static final List<String> HLS_PREFIX = Arrays.asList("4102-us", "ac5634-us");
 
+    /** 暴露给播放器做「切换线路」的线路表：{tag, 显示名}，tag 同时用于 play(flag) 识别用户选的那条 */
+    private static final String[][] LINES = {
+            {"iplay", "高清(iplay)"},
+            {"tos_hls3", "备用(tos_hls3)"},
+            {"ac5634-us", "备用2(ac5634-us)"}
+    };
+
     private static final Map<String, String> CACHE = new ConcurrentHashMap<>();
     private static final int CACHE_MAX = 8;
 
@@ -114,8 +121,16 @@ public class Xl02 extends Spider {
             if (href.isEmpty()) continue;
             plays.add(a.text().trim() + "$" + href);
         }
-        vod.setVodPlayFrom("雪落影视");
-        vod.setVodPlayUrl(TextUtils.join("#", plays));
+        // 站点的线路（CDN 维度）暴露成 TVBox 的多 from -> 播放器里能切换线路；
+        // 每条线路下重复同一套剧集，播放时按 flag 里的 tag 选线（缺失则回退到优先顺序）
+        List<String> from = new ArrayList<>();
+        List<String> urls = new ArrayList<>();
+        for (String[] line : LINES) {
+            from.add(line[1]);
+            urls.add(TextUtils.join("#", plays));
+        }
+        vod.setVodPlayFrom(TextUtils.join("$$$", from));
+        vod.setVodPlayUrl(TextUtils.join("$$$", urls));
         return Result.string(vod);
     }
 
@@ -129,7 +144,7 @@ public class Xl02 extends Spider {
             long t = System.currentTimeMillis();
             String body = OkHttp.string(SITE + "/lines?t=" + t + "&sg=" + sign(pid, t) + "&pid=" + pid, headers());
             JsonObject data = data(body);
-            String[] line = pickLine(data);
+            String[] line = pickLine(data, tagOf(flag));
             if (line == null) return Result.error("线路表为空");
 
             String playlist = decryptPlaylist(line[0]);
@@ -264,7 +279,8 @@ public class Xl02 extends Spider {
         return base + (base.contains("?") ? "&" : "?") + query;
     }
 
-    private static String[] pickLine(JsonObject data) {
+    /** 选线：播放器指定的线路优先，其次按 PREFER 顺序，最后取第一条；失效线路（返回占位图）跳过 */
+    private static String[] pickLine(JsonObject data, String wanted) {
         List<String[]> candidates = new ArrayList<>();
         for (String group : new String[]{"m3u8_2", "m3u8"}) {
             String raw = json(data, group);
@@ -276,8 +292,15 @@ public class Xl02 extends Spider {
                 candidates.add(new String[]{url, tag});
             }
         }
+        if (wanted != null && !wanted.isEmpty()) for (String[] candidate : candidates) if (wanted.equals(candidate[1])) return candidate;
         for (String prefer : PREFER) for (String[] candidate : candidates) if (prefer.equals(candidate[1])) return candidate;
         return candidates.isEmpty() ? null : candidates.get(0);
+    }
+
+    /** 从播放器传回的 flag（即 vod_play_from 的显示名）里认出线路 tag */
+    private static String tagOf(String flag) {
+        for (String[] line : LINES) if (flag != null && flag.contains(line[0])) return line[0];
+        return "";
     }
 
     private static JsonObject data(String body) {
