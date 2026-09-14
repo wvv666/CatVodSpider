@@ -1,4 +1,5 @@
+*build
 .gradle
 .idea
-*build
 /local.properties
+/js/config.local.json
