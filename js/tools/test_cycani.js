@@ -51,9 +51,10 @@ function check(label, cond, extra) {
 
 const USER = process.env.CYC_USER || '';
 const PASS = process.env.CYC_PASS || '';
+const TOKEN = process.env.CYC_TOKEN || '';
 
 console.log('=== 1) init + home ===');
-const ext = USER && PASS ? JSON.stringify({ username: USER, password: PASS }) : '';
+const ext = TOKEN ? JSON.stringify({ token: TOKEN }) : (USER && PASS ? JSON.stringify({ username: USER, password: PASS }) : '');
 spider.init({ skey: 'cyctest', ext: ext });
 const home = JSON.parse(spider.home());
 check('分类数 >= 5', home.class.length >= 5, home.class.length + ' 个：' + home.class.slice(0, 4).map(c => c.type_name).join(' / '));
@@ -117,12 +118,14 @@ check('搜索分页与首页不同', s2.list.length === 0 || s2.list[0].vod_id !
 
 console.log('\n=== 6) play（取流）===');
 const p = JSON.parse(spider.play(playFlag, playId, []));
-if (USER && PASS) {
-    check('带账号时取到播放地址', /^https?:/.test(p.url || ''), String(p.url).slice(0, 90));
-    check('带 header', !!(p.header && p.header['User-Agent']), JSON.stringify(p.header || {}));
+const hasCreds = !!(TOKEN || (USER && PASS));
+if (hasCreds) {
+    check('带账号/令牌时取到播放地址', /^https?:/.test(p.url || ''), String(p.url).slice(0, 96));
+    check('播放地址带签名（expires/md5）', /[?&](expires|md5)=/.test(p.url || '') || /\.m3u8/.test(p.url || ''), (String(p.url).match(/[?&][a-z]+=/g) || []).join(' '));
+    check('回传 header', !!(p.header && p.header['User-Agent']), JSON.stringify(p.header || {}));
     if (p.url) {
-        const head = execFileSync('curl', ['-s', '-I', '-L', '--max-time', '30', '-A', UA, '-o', '-', '-w', '%{http_code}', p.url], { maxBuffer: 8 * 1024 * 1024 }).toString();
-        console.log('  · 播放地址探测：' + head.slice(-80).replace(/\s+/g, ' '));
+        const head = execFileSync('curl', ['-s', '-I', '-L', '--max-time', '30', '-A', UA, '-H', 'Referer: https://www.cycani.org/', '-o', '-', '-w', 'HTTP=%{http_code} TYPE=%{content_type} SIZE=%{size_download}', p.url], { maxBuffer: 8 * 1024 * 1024 }).toString();
+        console.log('  · 播放地址探测（HEAD）：' + head.split('\n').slice(-1)[0]);
     }
 } else {
     check('没填账号时提示「未配置账号」', p.url === '' && /未配置账号/.test(p.msg || ''), p.msg);
