@@ -125,8 +125,13 @@ if (USER && PASS) {
         console.log('  · 播放地址探测：' + head.slice(-80).replace(/\s+/g, ' '));
     }
 } else {
-    check('没填账号时优雅降级（返回提示而不是抛错）', p.url === '' && /登录/.test(p.msg || ''), p.msg);
+    check('没填账号时提示「未配置账号」', p.url === '' && /未配置账号/.test(p.msg || ''), p.msg);
     console.log('  · 填 CYC_USER / CYC_PASS 环境变量可额外验证取流');
+    // 填了错的账号：应当把服务端的失败原因带出来（证明登录链路真的在跑，而不是静默失败）
+    spider.init({ skey: 'cyctest', ext: JSON.stringify({ username: '__hermes_probe__', password: 'invalid-probe' }) });
+    const bad = JSON.parse(spider.play(playFlag, playId, []));
+    check('填错账号时提示具体失败原因', bad.url === '' && /登录失败/.test(bad.msg || ''), bad.msg);
+    spider.init({ skey: 'cyctest', ext: ext });
 }
 
 console.log(`\n===== 结果: ${pass} 通过 / ${fail} 失败 =====`);

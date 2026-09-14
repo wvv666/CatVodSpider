@@ -35,6 +35,7 @@ var SECTION_MAX_PAGE = 6;
 var RULE = 'cycani';
 var CONF = {};
 var MEM = {};
+var LAST_ERROR = '';
 
 /* ============================ 宿主注入封装 ============================ */
 
@@ -47,7 +48,7 @@ function cacheSet(key, value) {
     try { local.set(RULE, key, value); } catch (e) {}
 }
 
-function headers(token) {
+function headers(token, json) {
     var h = {
         'Accept': 'application/json',
         'X-App-Name': APP_NAME,
@@ -56,6 +57,7 @@ function headers(token) {
         'User-Agent': UA,
         'Referer': HOST + '/'
     };
+    if (json) h['Content-Type'] = 'application/json';
     if (token) h['Authorization'] = /^Bearer\s+/i.test(token) ? token : ('Bearer ' + token);
     return h;
 }
@@ -73,7 +75,7 @@ function qs(query) {
 
 /** 原始请求，返回解析后的 JSON（失败返回 null） */
 function raw(path, query, body, token) {
-    var options = { method: body ? 'post' : 'get', headers: headers(token) };
+    var options = { method: body ? 'post' : 'get', headers: headers(token, !!body) };
     if (body) options.body = JSON.stringify(body);
     var res = req(API + path + qs(query), options);
     var text = res && res.content !== undefined ? res.content : '';
@@ -112,13 +114,20 @@ function saveAuth(d) {
 function login() {
     if (!CONF.username || !CONF.password) return '';
     var r = raw('/auth/login', null, { username: CONF.username, password: CONF.password }, null);
-    return r && r.code === 0 ? saveAuth(r.data) : '';
+    if (r && r.code === 0) {
+        LAST_ERROR = '';
+        return saveAuth(r.data);
+    }
+    LAST_ERROR = r ? ('登录失败：' + (r.msg || ('code ' + r.code))) : '登录失败：网络异常';
+    return '';
 }
 
 function refresh(old) {
     if (!old) return '';
     var r = raw('/auth/refresh', null, {}, old);
-    return r && r.code === 0 ? saveAuth(r.data) : '';
+    if (r && r.code === 0) return saveAuth(r.data);
+    if (r && r.code !== 401 && r.code !== 403) LAST_ERROR = '令牌刷新失败：' + (r.msg || r.code);
+    return '';
 }
 
 /** 需要登录的请求：自动带令牌、401 先刷新再重登 */
@@ -335,8 +344,11 @@ function play(flag, id, flags) {
     }
     if (!sectionId) return JSON.stringify({ parse: 0, url: '', msg: '无效的选集' });
     var r = auth('/v2/sections/' + encodeURIComponent(sectionId) + '/play-url', null, null);
-    if (!r) return JSON.stringify({ parse: 0, url: '', msg: '取流需要登录：请在站点配置的 ext 里填 {"username":"…","password":"…"}（或 token）' });
-    if (r.code !== 0) return JSON.stringify({ parse: 0, url: '', msg: '取流失败：' + (r.msg || r.code) });
+    if (!r) {
+        var why = (CONF.token || CONF.username) ? (LAST_ERROR || '登录失败，请检查 ext 里的账号或令牌') : '未配置账号';
+        return JSON.stringify({ parse: 0, url: '', msg: why + ' —— 该站取流必须登录：在订阅里把 cycani 的 ext 填成 {"username":"…","password":"…"}（或 {"token":"…"}）' });
+    }
+    if (r.code !== 0) return JSON.stringify({ parse: 0, url: '', msg: '取流失败：' + (r.code === 401 ? '登录状态已过期，请更新 ext 里的账号或令牌' : (r.msg || r.code)) });
     var d = r.data || {};
     if (!d.url) return JSON.stringify({ parse: 0, url: '', msg: '该集暂时没有可用视频' });
     return JSON.stringify({ parse: 0, url: d.url, header: { 'User-Agent': UA, 'Referer': HOST + '/' } });
