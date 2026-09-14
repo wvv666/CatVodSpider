@@ -4,9 +4,23 @@
 
 https://github.com/CatVodTVOfficial/CatVodTVSpider
 
+两种交付形态：**订阅用的 js 源**在 [`js/`](js/)，**jar 源**（`csp_Xl02`）在
+`app/src/main/java/com/github/catvod/spider/Xl02.java`。同一站点（xl02.com.de）的等价实现，
+取流链路完全一致。
+
+### 订阅地址（播放器「配置地址」填这个）
+
+```
+https://cdn.jsdelivr.net/gh/wvv666/CatVodSpider@main/js/config.json
+https://raw.githubusercontent.com/wvv666/CatVodSpider/main/js/config.json
+https://gh-proxy.com/https://raw.githubusercontent.com/wvv666/CatVodSpider/main/js/config.json
+```
+
+`js/config.json` 里的 `api` 是相对路径 `./xl02.js`，会跟随同一通道取源文件；详情见 [js/README.md](js/README.md)。
+
 ---
 
-## 自建源
+## jar 源（`csp_Xl02`）
 
 | 类 | api | 站点 | 说明 |
 |---|---|---|---|

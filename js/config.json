@@ -1,0 +1,16 @@
+{
+  "wallpaper": "",
+  "sites": [
+    {
+      "key": "xl02",
+      "name": "雪落影视",
+      "type": 3,
+      "api": "./xl02.js",
+      "searchable": 0,
+      "quickSearch": 0,
+      "changeable": 0,
+      "timeout": 60,
+      "style": { "type": "rect", "ratio": 1.5 }
+    }
+  ]
+}
