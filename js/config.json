@@ -44,6 +44,18 @@
       "style": { "type": "rect", "ratio": 1.5 }
     },
     {
+      "key": "cycani",
+      "name": "次元城动画",
+      "type": 3,
+      "api": "./cycani.js",
+      "searchable": 1,
+      "quickSearch": 1,
+      "changeable": 0,
+      "timeout": 60,
+      "style": { "type": "rect", "ratio": 1.4 },
+      "ext": "{\"username\":\"你的账号\",\"password\":\"你的密码\"}"
+    },
+    {
       "key": "local",
       "name": "Local",
       "type": 3,

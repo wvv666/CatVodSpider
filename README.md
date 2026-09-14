@@ -4,9 +4,11 @@
 
 https://github.com/CatVodTVOfficial/CatVodTVSpider
 
-两种交付形态：**订阅用的 js 源**在 [`js/`](js/)，**jar 源**（`csp_Xl02`）在
-`app/src/main/java/com/github/catvod/spider/Xl02.java`。同一站点（xl02.com.de）的等价实现，
-取流链路完全一致。
+两种交付形态：
+
+- **订阅用的 js 源**在 [`js/`](js/)：`xl02.js`（雪落影视）+ `cycani.js`（次元城动画，播放需账号，
+  见 [js/README.md](js/README.md)）
+- **jar 源**（`csp_Xl02`）在 `app/src/main/java/com/github/catvod/spider/Xl02.java`，与 `js/xl02.js` 等价
 
 ### 订阅地址（播放器「配置地址」填这个）
 
