@@ -112,7 +112,7 @@ public class Xl02 extends Spider {
         for (Element a : doc.select("a.play-item")) {
             String href = a.attr("href").trim();
             if (href.isEmpty()) continue;
-            plays.add(href + "$" + a.text().trim());
+            plays.add(a.text().trim() + "$" + href);
         }
         vod.setVodPlayFrom("雪落影视");
         vod.setVodPlayUrl(TextUtils.join("#", plays));
@@ -124,16 +124,16 @@ public class Xl02 extends Spider {
         try {
             String page = OkHttp.string(fullUrl(id), headers());
             String pid = match(page, "var\\s+pid\\s*=\\s*(\\d+)");
-            if (pid.isEmpty()) return Result.error("未取到 pid").string();
+            if (pid.isEmpty()) return Result.error("未取到 pid");
 
             long t = System.currentTimeMillis();
             String body = OkHttp.string(SITE + "/lines?t=" + t + "&sg=" + sign(pid, t) + "&pid=" + pid, headers());
             JsonObject data = data(body);
             String[] line = pickLine(data);
-            if (line == null) return Result.error("线路表为空").string();
+            if (line == null) return Result.error("线路表为空");
 
             String playlist = decryptPlaylist(line[0]);
-            if (playlist.isEmpty()) return Result.error("播放列表解密失败").string();
+            if (playlist.isEmpty()) return Result.error("播放列表解密失败");
 
             String key = "p" + pid + "_" + t;
             put(key, rewriteSegments(playlist, line[1]));
@@ -144,7 +144,7 @@ public class Xl02 extends Spider {
             return Result.get().url(proxyUrl("&k=" + key)).header(header).string();
         } catch (Throwable e) {
             SpiderDebug.log(e);
-            return Result.error(e.getMessage() == null ? e.toString() : e.getMessage()).string();
+            return Result.error(e.getMessage() == null ? e.toString() : e.getMessage());
         }
     }
 
@@ -156,7 +156,8 @@ public class Xl02 extends Spider {
 
     @Override
     public Object[] proxy(Map<String, String> params) {
-        String body = params == null ? null : CACHE.get(params.get("k"));
+        String key = params == null ? null : params.get("k");
+        String body = key == null ? null : CACHE.get(key);
         byte[] bytes = (body == null ? "not found" : body).getBytes(StandardCharsets.UTF_8);
         return new Object[]{body == null ? 404 : 200, body == null ? "text/plain; charset=utf-8" : "application/vnd.apple.mpegurl", new ByteArrayInputStream(bytes)};
     }
@@ -264,21 +265,19 @@ public class Xl02 extends Spider {
     }
 
     private static String[] pickLine(JsonObject data) {
-        List<String> tags = new ArrayList<>();
+        List<String[]> candidates = new ArrayList<>();
         for (String group : new String[]{"m3u8_2", "m3u8"}) {
             String raw = json(data, group);
             for (String item : raw.split(",")) {
-                int i = item.indexOf('#');
-                String url = (i >= 0 ? item.substring(0, i) : item).trim();
-                if (!url.startsWith("http")) continue;
-                if (DEAD.contains(i >= 0 ? item.substring(i + 1).trim() : "")) continue;
-                tags.add((i >= 0 ? item.substring(i + 1).trim() : "") + "\u0000" + url);
+                int index = item.indexOf('#');
+                String url = (index >= 0 ? item.substring(0, index) : item).trim();
+                String tag = index >= 0 ? item.substring(index + 1).trim() : "";
+                if (!url.startsWith("http") || DEAD.contains(tag)) continue;
+                candidates.add(new String[]{url, tag});
             }
         }
-        for (String prefer : PREFER) {
-            for (String item : tags) if (item.startsWith(prefer + "\u0000")) return item.split("\u0000", 2);
-        }
-        return tags.isEmpty() ? null : tags.get(0).split("\u0000", 2);
+        for (String prefer : PREFER) for (String[] candidate : candidates) if (prefer.equals(candidate[1])) return candidate;
+        return candidates.isEmpty() ? null : candidates.get(0);
     }
 
     private static JsonObject data(String body) {

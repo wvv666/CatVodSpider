@@ -53,4 +53,11 @@ build.bat                 # gradlew spiderJar → jar/custom_spider.jar + .md5�
 ./gradlew spiderJar       # 同上（Linux/macOS，会跳过 PowerShell 校验步骤）
 ```
 
-CI（`.github/workflows/spider.yml`）在 push 后自动构建并上传 `custom_spider.jar` 产物。
+### 验证（不需要 Android SDK）
+
+```bash
+./tools/jvm-check/run.sh   # android 桩 + 真实源码编译到桌面 JVM，打真实站点跑 14 项断言
+```
+
+CI：`.github/workflows/spider.yml` 已在本地备好（push 后自动构建并上传 jar 产物），
+但 GitHub 的 OAuth token 需要 `workflow` 权限才能推送该文件（本机 gh token 只有 `gist` / `read:org` / `repo`）。

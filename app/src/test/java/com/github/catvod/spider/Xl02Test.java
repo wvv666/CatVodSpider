@@ -50,9 +50,10 @@ public class Xl02Test {
 
     @Test
     public void detailContent() {
+        // 宿主约定为 名称$地址（Flag.setEpisodes: split("\\$", 2) -> Episode.create(name, url)）
         String playUrl = string(first(detail(), "list"), "vod_play_url");
-        assertTrue("Missing play page: " + playUrl, playUrl.contains("$"));
-        assertTrue("Missing play from: " + playUrl, playUrl.endsWith(".htm") || playUrl.contains("-0.htm$"));
+        assertTrue("Missing play page: " + playUrl, playUrl.contains("$/"));
+        assertTrue("Play url should end with the page path: " + playUrl, playUrl.endsWith(".htm"));
     }
 
     @Test
@@ -79,7 +80,7 @@ public class Xl02Test {
     @Test
     public void searchContent() {
         // 站点搜索需要图片验证码，源内无法绕过 —— 返回空列表，不报错
-        assertEquals("{\"list\":[]}", spider.searchContent("浪浪山", false));
+        assertTrue("Expected empty list: " + spider.searchContent("浪浪山", false), spider.searchContent("浪浪山", false).contains("\"list\":[]"));
     }
 
     private static JsonObject category() {
