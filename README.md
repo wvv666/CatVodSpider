@@ -7,7 +7,8 @@ https://github.com/CatVodTVOfficial/CatVodTVSpider
 两种交付形态：
 
 - **订阅用的 js 源**在 [`js/`](js/)：`xl02.js`（雪落影视）+ `cycani.js`（次元城动画，播放需账号，
-  见 [js/README.md](js/README.md)）
+  见 [js/README.md](js/README.md)）+ `mgnacg.js`（橘子动漫）+ `xifanacg.js`（稀饭动漫 Next）
+  + `girigirilove.js`（girigiri愛動漫，带站内弹幕）+ `4kcz.js`（厂长资源，PNG 伪装分片）
 - **jar 源**（`csp_Xl02`）在 `app/src/main/java/com/github/catvod/spider/Xl02.java`，与 `js/xl02.js` 等价
 
 ### 订阅地址（播放器「配置地址」填这个）
